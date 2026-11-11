@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Bengkel Life</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bengkel Life">
+<meta name="theme-color" content="#20262b">
+<style>
+:root{--bg:#20262b;--cd:#2b333a;--ln:#3a444c;--ac:#f2c230;--tx:#f1efe8;--mu:#9aa5ad;--ok:#6cc24a;--bd:#e5484d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:15px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none;touch-action:manipulation}
+#app{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0 6px}
+.day{font-weight:800;font-size:17px}
+.plat{background:var(--ac);color:#111;font:800 17px/1 ui-monospace,Menlo,monospace;padding:7px 10px;border-radius:6px;border:2px solid #111;box-shadow:0 0 0 2px var(--ac)}
+.rep{font-weight:700}
+#goal{padding:2px 0 8px}
+#gt{font-size:12px;color:var(--mu);display:flex;justify-content:space-between;margin-bottom:4px}
+.pb{height:6px;background:var(--ln);border-radius:3px;overflow:hidden}
+.pb span{display:block;height:100%;background:var(--ok);border-radius:3px;transition:width .3s}
+main{flex:1;overflow-y:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+h4{margin:14px 0 6px;font-size:13px;color:var(--mu);font-weight:700}
+.card{display:flex;gap:10px;align-items:center;background:var(--cd);border-radius:12px;padding:10px;margin-bottom:8px;border-left:5px solid var(--ln)}
+.card.oj{border-left-color:var(--ok)}
+.card:active{transform:scale(.985)}
+.av{font-size:30px}
+.inf{flex:1;min-width:0}
+.inf small{color:var(--mu)}
+.inf i{font-style:normal;font-size:11px;background:var(--ok);color:#111;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px}
+.inf .pb span{background:var(--ac)}
+.inf .pb{margin-top:6px;height:4px}
+.fee{font-weight:800;color:var(--ac);white-space:nowrap}
+.empty{text-align:center;color:var(--mu);padding:22px 10px;background:var(--cd);border-radius:12px}
+.m{background:var(--cd);border-radius:12px;padding:10px;margin-bottom:8px}
+.m small{display:block;color:var(--mu)}
+.m .pb{margin:6px 0 4px}
+.m .pb span{background:var(--ac)}
+footer{display:flex;gap:8px;padding:8px 0 10px}
+.b{display:block;width:100%;border:0;border-radius:12px;padding:13px;font:700 15px inherit;font-family:inherit;background:var(--ln);color:var(--tx);margin-top:8px}
+.b:active{filter:brightness(1.2)}
+.b.p{background:var(--ac);color:#111}
+.b.x{background:var(--bd);color:#fff;opacity:.55}
+footer .b{margin:0}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center;z-index:9}
+#modal[hidden]{display:none}
+#box{width:100%;max-width:480px;background:var(--bg);border-radius:18px 18px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));max-height:88%;overflow-y:auto;border-top:4px solid var(--ac)}
+#box h3{margin:0 0 6px;font-size:19px}
+#box p,#box .tx{margin:6px 0;line-height:1.5}
+.hint{color:var(--mu);font-style:italic}
+#toast{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translate(-50%,-90px);background:var(--ac);color:#111;font-weight:700;padding:10px 14px;border-radius:10px;max-width:92%;text-align:center;transition:transform .25s;z-index:20}
+#toast.on{transform:translate(-50%,0)}
+.tap{font-size:20px;padding:20px}
+.up{display:flex;justify-content:space-between;gap:8px;text-align:left}
+.up small{display:block;font-weight:400;opacity:.8}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><span class="day" id="day"></span><span class="rep" id="rep"></span><span class="plat" id="cash"></span></header>
+  <div id="goal"><div id="gt"><span id="g1"></span><span id="g2"></span></div><div class="pb"><span id="gbar"></span></div></div>
+  <main>
+    <h4>Antrean pelanggan, tap untuk servis</h4>
+    <div id="queue"></div>
+    <h4>Misi</h4>
+    <div id="ms"></div>
+  </main>
+  <footer><button class="b" id="bu" style="flex:1">🛠 Upgrade</button><button class="b p" id="bt" style="flex:1.4">🌙 Tutup Bengkel</button><button class="b" id="br" style="flex:.3">⟲</button></footer>
+</div>
+<div id="modal" hidden><div id="box"></div></div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),f=n=>Math.round(n).toLocaleString("id-ID");
+const SAVE="bengkelLife.v1",TARGET=4000000,MAXDAY=30;
+// [motor, keluhan, diagnosa benar, [salah,salah], ongkos, harga sparepart, tag]
+const J=[
+["Honda Beat","Susah distarter pagi, mesin batuk-batuk","Busi mati",["Kampas rem","Rantai putus"],70000,15000,"umum"],
+["Yamaha Mio","Gas ditarik tapi motor ga mau lari","Belt CVT aus",["Aki soak","Oli kehabisan"],140000,60000,"umum"],
+["Honda Supra X","Rantai bunyi kretek-kretek","Rantai dan gir aus",["Busi mati","Shock patah"],120000,50000,"umum"],
+["Honda Vario","Rem blong pas turun flyover","Kampas rem habis",["Bohlam putus","Busi mati"],80000,25000,"umum"],
+["Revo (ojol)","Mogok pas lagi ada order, lampu redup","Aki soak",["Karburator kotor","Kopling slip"],110000,55000,"ojol"],
+["Scoopy (ojol)","Ban belakang kena paku payung","Ban bocor, tambal",["Rantai kendor","Busi basah"],35000,5000,"ojol"],
+["NMAX (ojol)","Getar di gas awal, tarikan berat","Roller CVT aus",["Aki soak","Filter udara jebol"],150000,70000,"ojol"],
+["Honda Beat","Sudah 4.000 km belum ganti oli, mesin kasar","Oli mesin habis",["Ban gundul","Spion longgar"],55000,20000,"oli"],
+["Yamaha Jupiter","Oli berasa kental, kasar, nyendat","Ganti oli dan filter",["Rem cakram aus","Lampu sein mati"],65000,25000,"oli"],
+["Vespa Pak Haji","Mati mendadak di lampu merah","Koil dan kabel busi",["Ban bocor","Kampas rem"],160000,60000,"umum"],
+["Vario (ojol)","Lampu depan mati, hujan malam","Bohlam dan sekring",["Oli habis","Kopling slip"],60000,15000,"ojol"],
+["Beat Street","Ban depan kempes kena paku","Ban bocor, tambal",["Rantai kendor","Busi basah"],35000,5000,"ban"],
+["Supra Fit","Ban belakang kempes lagi ketemu paku","Ban bocor, tambal",["Rem blong","Busi mati"],35000,5000,"ban"],
+["Satria FU","Knalpot brong, takut kena razia","Pasang knalpot standar",["Ganti busi","Tambal ban"],130000,70000,"knalpot"]
+];
+const NM=["Bu Wati","Pak Joko","Mas Rizky","Kang Asep","Mbak Sari","Bang Ucok","Pak Haji","Dek Fajar","Bu Ratna","Mas Bagas","Cak Hendra","Neng Dewi"];
+const AV=["👨","👩","🧔","👳","🧕","👦","👵","🧑"];
+const SAY={ojol:"Cepetan Mas, orderan lagi rame, saldo bisa hangus!",ban:"Bisa kelar sebelum maghrib, Mas?",knalpot:"Jangan sampai kena tilang ya Mas!",oli:"Pokoknya yang bagus tapi harga teman ya.",umum:"Tolong dicek Mas, tadi mendadak gitu."};
+const UP=[
+{id:"spanduk",n:"Spanduk Servis Cepat",d:"+1 pelanggan tiap hari",p:150000},
+{id:"manual",n:"Buku Manual Servis",d:"Satu pilihan salah dicoret",p:200000},
+{id:"kompresor",n:"Kompresor Angin",d:"Kerja lebih cepat (8 tap jadi 5)",p:250000},
+{id:"rak",n:"Rak Sparepart Grosir",d:"Harga sparepart turun 30%",p:300000}];
+const M=[
+{id:1,t:"Pelanggan Pertama",d:"Servis 3 motor",g:3,r:50000,v:()=>S.c.served},
+{id:2,t:"Ojol Jangan Mogok",d:"Servis 3 motor ojol. Komunitas mulai kenal bengkelmu.",g:3,r:100000,rp:.3,v:()=>S.c.ojol},
+{id:3,t:"Telinga Montir",d:"Diagnosa benar di percobaan pertama, 5 kali",g:5,r:80000,v:()=>S.c.perfect},
+{id:4,t:"Raja Oli",d:"Ganti oli 3 motor",g:3,r:60000,v:()=>S.c.oli},
+{id:5,t:"Musim Hujan, Ban Bocor",d:"Tambal 3 ban",g:3,r:70000,v:()=>S.c.ban},
+{id:6,t:"Naik Kelas",d:"Beli 2 upgrade",g:2,r:100000,v:()=>Object.keys(S.up).length},
+{id:7,t:"Lolos Razia",d:"Ganti 2 knalpot brong jadi standar",g:2,r:90000,v:()=>S.c.knalpot},
+{id:8,t:"Rush Mudik",d:"Servis 25 motor",g:25,r:250000,v:()=>S.c.served},
+{id:9,t:"Bengkel Terpercaya",d:"Capai rating 4 bintang",g:4,r:200000,v:()=>Math.floor(S.rep*10)/10},
+{id:10,t:"Sultan Bengkel",d:"Servis 60 motor",g:60,r:300000,v:()=>S.c.served}];
+const STORY={
+1:["🏚 Pulang Kampung","Kamu Dimas. Bulan lalu pabrik tempatmu kerja di Cikarang PHK massal, jadi kamu pulang. Bapak, Pak Slamet, sedang dirawat. Bengkel Jaya Motor yang ia rawat 20 tahun hampir tutup.<br><br>Pak Haji Darto, pemilik lapak: <i>“Dim, sewa Rp 300 ribu per minggu. Kalau dalam 30 hari kamu punya Rp 4 juta, lapak ini saya lepas ke kamu.”</i><br><br>Buka bengkel. Setiap pelanggan adalah harapan."],
+3:["📞 Telepon Ibu","<i>“Le, jangan lupa makan. Bapak nanyain bengkel terus. Obatnya mahal, tapi kamu jangan terlalu dipikirin.”</i><br><br>Kamu menggenggam kunci pas lebih erat."],
+8:["🛵 Kang Asep","Kang Asep, ketua komunitas ojol sekitar sini, mampir. <i>“Mas, bengkelnya enak. Nanti saya ajak anak-anak.”</i><br><br>Ojol datang lebih sering, tapi mereka tidak sabaran: waktu adalah saldo."],
+15:["🎥 Video Call Bapak","Bapak sudah bisa duduk. <i>“Ban motor orang itu bukan cuma ban, Le. Itu jalan hidupnya.”</i><br><br>Kamu menahan air mata, lalu pura-pura sibuk pasang gir."],
+20:["⚠️ Ada Peminat Lain","Pak Haji bilang ada orang lain yang melirik lapak ini. <i>“Saya tunggu sampai hari ke-30, Dim.”</i>"],
+25:["🌙 Musim Mudik","Jalanan ramai pemudik. Bengkel jadi tempat singgah favorit, antrean memanjang sampai ke trotoar."]};
+const EV=[
+{t:"🌧 Hujan Deras",b:"Hujan seharian. Banyak motor kena paku di jalan banjir.",a:[["Buka lapak lebih lebar",()=>{S.q.push(mk("ban"),mk("ban"))}]]},
+{t:"🚔 Razia Knalpot",b:"Polisi razia di perempatan. Anak muda panik cari knalpot standar.",a:[["Siap melayani",()=>{S.q.push(mk("knalpot"),mk("knalpot"))}]]},
+{t:"🕶 Preman Minta Jatah",b:"<i>“Uang keamanan, Bang. Lima puluh ribu aja.”</i>",a:[["Kasih Rp 50 ribu",()=>{S.cash=Math.max(0,S.cash-50000)}],["Ajak ngopi dan ngobrol",()=>{if(Math.random()<.5){S.rep=Math.min(5,S.rep+.1);toast("Preman pergi, malah jadi kenalan")}else{S.cash=Math.max(0,S.cash-50000);S.rep=Math.max(0,S.rep-.1);toast("Gagal, tetap bayar Rp 50 ribu")}}]]},
+{t:"🇮🇩 Panitia 17-an",b:"Pak RT datang bawa proposal lomba balap karung.",a:[["Sumbang Rp 30 ribu",()=>{S.cash=Math.max(0,S.cash-30000);S.rep=Math.min(5,S.rep+.2)}],["Besok ya Pak",()=>{S.rep=Math.max(0,S.rep-.2)}]]},
+{t:"💡 Listrik Padam",b:"PLN padam, kompresor mati.",a:[["Sewa genset Rp 40 ribu",()=>{S.cash=Math.max(0,S.cash-40000)}],["Tunggu PLN nyala",()=>{S.q.forEach(c=>c.p-=30)}]]}];
+let S,busy=false;
+const fresh=()=>({day:1,cash:150000,rep:2,q:[],up:{},md:{},c:{served:0,ojol:0,perfect:0,oli:0,ban:0,knalpot:0}});
+function save(){try{localStorage.setItem(SAVE,JSON.stringify(S))}catch(e){}}
+function load(){try{const x=localStorage.getItem(SAVE);return x?JSON.parse(x):null}catch(e){return null}}
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),2800)}
+function modal(h){$("#box").innerHTML=h;$("#modal").hidden=false;busy=true}
+function close(){$("#modal").hidden=true;busy=false}
+function dlg(t,b,btns){modal(`<h3>${t}</h3><div class="tx">${b}</div>`+btns.map((x,i)=>`<button class="b ${i?"":"p"}" data-i="${i}">${x[0]}</button>`).join(""));
+ $("#box").querySelectorAll("[data-i]").forEach(el=>el.onclick=()=>{close();const fn=btns[el.dataset.i][1];fn&&fn()})}
+function mk(tag){const p=tag?J.filter(j=>j[6]==tag):J,j=p[Math.random()*p.length|0];return{j,n:NM[Math.random()*NM.length|0],av:AV[Math.random()*AV.length|0],p:100}}
+function render(){
+ $("#day").textContent=`Hari ${S.day}/${MAXDAY}`;
+ $("#rep").textContent="⭐ "+S.rep.toFixed(1);
+ $("#cash").textContent="Rp "+f(S.cash);
+ const r=S.day%7===0?0:7-S.day%7;
+ $("#g1").textContent="Target beli lapak Rp "+f(TARGET);
+ $("#g2").textContent=r?`Sewa jatuh tempo ${r} hari lagi`:"Sewa jatuh tempo hari ini";
+ $("#gbar").style.width=Math.min(100,S.cash/TARGET*100)+"%";
+ $("#queue").innerHTML=S.q.length?S.q.map((c,i)=>`<div class="card ${c.j[6]=="ojol"?"oj":""}" data-i="${i}"><div class="av">${c.av}</div><div class="inf"><b>${c.n}</b>${c.j[6]=="ojol"?"<i>OJOL</i>":""}<br><small>${c.j[0]}: ${c.j[1]}</small><div class="pb"><span style="width:${Math.max(0,c.p)}%"></span></div></div><div class="fee">Rp ${f(c.j[4])}</div></div>`).join(""):`<div class="empty">Antrean kosong. Tutup bengkel atau tunggu hari esok.</div>`;
+ $("#queue").querySelectorAll(".card").forEach(el=>el.onclick=()=>work(+el.dataset.i));
+ const act=M.filter(m=>!S.md[m.id]).slice(0,3);
+ $("#ms").innerHTML=act.length?act.map(m=>{const v=Math.min(m.v(),m.g);return`<div class="m"><b>🎯 ${m.t}</b><small>${m.d}</small><div class="pb"><span style="width:${v/m.g*100}%"></span></div><small>${v}/${m.g}, hadiah Rp ${f(m.r)}</small></div>`}).join(""):`<div class="empty">Semua misi selesai. Kamu legenda bengkel!</div>`;
+}
+function chkM(){M.forEach(m=>{if(!S.md[m.id]&&m.v()>=m.g){S.md[m.id]=1;S.cash+=m.r;S.rep=Math.min(5,S.rep+(m.rp||0));toast(`🎯 Misi selesai: ${m.t}! +Rp ${f(m.r)}`)}})}
+function work(i){
+ const c=S.q[i];if(!c||busy)return;
+ let wrong=0,taps=0;const need=S.up.kompresor?5:8,pc=Math.round(c.j[5]*(S.up.rak?.7:1));
+ let o=[c.j[2],...c.j[3]];if(S.up.manual)o.splice(1+(Math.random()*2|0),1);o.sort(()=>Math.random()-.5);
+ modal(`<h3>🛵 ${c.j[0]}</h3><p><b>${c.n}:</b> “${c.j[1]}”</p><p class="hint">${SAY[c.j[6]]||SAY.umum}</p><div id="ph1"><h4>Diagnosa kamu?</h4>${o.map(x=>`<button class="b" data-x="${x}">${x}</button>`).join("")}<button class="b x" id="no">Nanti dulu</button></div><div id="ph2" hidden><h4>Bongkar, ganti, pasang. Gas terus!</h4><div class="pb"><span id="wb" style="width:0"></span></div><button class="b p tap" id="tp">🔧 Kerjakan!</button></div>`);
+ $("#no").onclick=close;
+ $("#box").querySelectorAll("[data-x]").forEach(el=>el.onclick=()=>{
+  if(el.dataset.x===c.j[2]){$("#ph1").hidden=true;$("#ph2").hidden=false;return}
+  wrong++;el.disabled=true;el.style.opacity=.35;S.cash=Math.max(0,S.cash-Math.round(pc/2));S.rep=Math.max(0,S.rep-.1);c.p-=8;render();toast("❌ Salah diagnosa, sparepart kebuang setengah")});
+ $("#tp").onclick=()=>{taps++;$("#wb").style.width=taps/need*100+"%";if(navigator.vibrate)navigator.vibrate(8);
+  if(taps>=need){
+   const tip=S.rep>=4?Math.round(c.j[4]*.1):0,bonus=c.j[6]=="ojol"&&c.p>50?20000:0,net=c.j[4]+tip+bonus-pc;
+   S.cash+=net;S.c.served++;if(S.c[c.j[6]]!==undefined)S.c[c.j[6]]++;
+   if(!wrong)S.c.perfect++;S.rep=Math.min(5,S.rep+(wrong?.05:.15));
+   S.q.splice(S.q.indexOf(c),1);close();chkM();render();save();
+   toast(`✅ ${c.n} puas! +Rp ${f(net)}${bonus?" (bonus ojol tepat waktu)":""}`)}}
+}
+function shop(){
+ modal(`<h3>🛠 Upgrade Bengkel</h3>`+UP.map(u=>`<button class="b up" data-u="${u.id}" ${S.up[u.id]?"disabled":""}><span>${u.n}<small>${u.d}</small></span><span>${S.up[u.id]?"Terpasang":"Rp "+f(u.p)}</span></button>`).join("")+`<button class="b x" id="no">Tutup</button>`);
+ $("#no").onclick=close;
+ $("#box").querySelectorAll("[data-u]").forEach(el=>el.onclick=()=>{const u=UP.find(x=>x.id===el.dataset.u);
+  if(S.cash<u.p){toast("Uang belum cukup");return}
+  S.cash-=u.p;S.up[u.id]=1;chkM();save();render();shop();toast("Terpasang: "+u.n)})}
+function newDay(){
+ const n=3+(S.rep>=3?1:0)+(S.rep>=4?1:0)+(S.up.spanduk?1:0)+(S.day>=25&&S.day<=28?2:0);
+ S.q=[];for(let i=0;i<n;i++)S.q.push(mk());
+ save();render();
+ const go=()=>{if(S.day>1&&Math.random()<.5){const e=EV[Math.random()*EV.length|0];dlg(e.t,e.b,e.a.map(a=>[a[0],()=>{a[1]();render();save()}]))}};
+ const st=STORY[S.day];st?dlg(st[0],st[1],[["Lanjut",go]]):go();
+}
+function over(t){dlg("💔 Game Over",t,[["Coba lagi dari awal",()=>{S=fresh();newDay()}]])}
+function win(){dlg("🏆 Lapak Jadi Milikmu!","Pak Haji menyerahkan surat lapak. Kamu memasang spanduk baru: <b>BENGKEL SLAMET JAYA, sejak 2003</b>.<br><br>Video call ke rumah sakit. Bapak tersenyum, ibu menangis, dan antrean ojol sudah menunggu di depan.<br><br>Total servis: "+S.c.served+" motor.",[["Main lagi",()=>{S=fresh();newDay()}]])}
+function endDay(){
+ S.q.forEach(()=>S.rep=Math.max(0,S.rep-.2));S.q=[];
+ let t="Makan dan listrik hari ini: Rp 30.000.";S.cash=Math.max(0,S.cash-30000);
+ if(S.day%7===0){const s=S.day>14?350000:300000;
+  if(S.cash<s){localStorage.removeItem(SAVE);return over(`Uangmu Rp ${f(S.cash)}, sewa Rp ${f(s)} tidak terbayar. Pak Haji dengan berat hati menyuruhmu angkat barang. Bengkel Jaya Motor tutup.`)}
+  S.cash-=s;t+=` Bayar sewa lapak ke Pak Haji: Rp ${f(s)}.`}
+ chkM();
+ if(S.cash>=TARGET)return win();
+ if(S.day>=MAXDAY)return over("Hari ke-30 tiba, tabunganmu belum Rp 4 juta. Lapak dijual ke orang lain. Tapi kamu tahu, bengkel kecil lain menunggu.");
+ S.day++;dlg("🌙 Hari "+(S.day-1)+" selesai",t+`<br>Uangmu sekarang Rp ${f(S.cash)}.`,[["Buka bengkel hari "+S.day,newDay]]);
+}
+$("#bu").onclick=()=>{if(!busy)shop()};
+$("#bt").onclick=()=>{if(busy)return;dlg("Tutup bengkel?",S.q.length?"Masih ada "+S.q.length+" pelanggan menunggu. Kalau ditinggal, rating turun.":"Semua pelanggan sudah dilayani.",[["Ya, tutup",endDay],["Belum dulu"]])};
+$("#br").onclick=()=>{if(busy)return;dlg("Ulang dari awal?","Semua progres akan dihapus.",[["Ya, ulang",()=>{S=fresh();newDay()}],["Batal"]])};
+setInterval(()=>{if(busy||!S||!S.q.length)return;
+ S.q.forEach(c=>c.p-=c.j[6]=="ojol"?2.2:1.2);
+ const n=S.q.length;S.q=S.q.filter(c=>{if(c.p<=0){S.rep=Math.max(0,S.rep-.3);toast(`😤 ${c.n} pergi, kelamaan nunggu`);return false}return true});
+ render();if(S.q.length!==n)save()},1000);
+S=load();if(S&&S.day){render()}else{S=fresh();newDay()}
+</script>
+</body>
+</html>
