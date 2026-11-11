@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Bengkel Life",
+  "short_name": "Bengkel Life",
+  "description": "Satu kunci pas. Banyak cerita. Rawat bengkel dan wujudkan mimpi punya lapak sendiri.",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#111a1c",
+  "theme_color": "#111a1c",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {"src":"./icons/app-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"./icons/app-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"./icons/maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}
